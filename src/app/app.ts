@@ -6,6 +6,8 @@ import express from "express";
 import { Controller } from "./util/rest/controller";
 import RequestWithUser from "./util/rest/request";
 import cors = require("cors");
+import { SimpleConsoleLogger } from "typeorm";
+import errorMiddleware from "./middleware/ErrorMiddleware";
 /**
  * Express application wrapper class to centralize initialization
  */
@@ -21,6 +23,7 @@ class App extends EventEmitter {
 
     this.initializeMiddlewares();
     this.initializeControllers(controllers);
+    this.initializeErrorHandling()
   }
 
   /**
@@ -47,15 +50,23 @@ class App extends EventEmitter {
     this.app.use(cookieParser());
     this.app.use(compression());
     this.app.use(express.static('public'));
-
+    
 
     // use for computing processing time on response
     this.app.use((request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
       request.startTime = Date.now();
       next();
     });
+
+    this.app.use((request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
+      console.log(request.body);
+      next();
+    });
   } 
 
+  private initializeErrorHandling() {
+    this.app.use(errorMiddleware);
+  }
   /**
    * Iterates through controllers in services/index and adds their routes/handlers to app
    * @param controllers
